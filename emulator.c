@@ -140,7 +140,7 @@ void Execute(State * state, Instruction inst)
 			break;
 		default:
 			fprintf(stderr,"Error, instruction not avalible: %01x\n",inst->firstNib);
-			break;
+			exit(1);
 	}
 }
 

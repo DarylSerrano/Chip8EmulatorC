@@ -125,47 +125,60 @@ void Move(State * state, Instruction inst) // LD Vx, Vy
 
 void Arithmetic(State * state, Instruction inst) // OR, AND, XOR, ADD, SUB, SHR, SHL, SUBN 
 {
-	//TO-DO
 	switch(inst.finalNib)
 	{
 		case 0x01:
 			//Bitwise OR: Vx OR Vy
-			state->V[inst.firstNib] = state->V[inst.firstNib] | state->V[inst.secondByte >> 4]; 
+			state->V[inst.secondNib] = state->V[inst.secondNib] | state->V[inst.secondByte >> 4]; 
 			break;
 		case 0x02:
 			//Bitwise AND: Vx AND Vy
-			state->V[inst.firstNib] = state->V[inst.firstNib] & state->V[inst.secondByte >> 4]; 
+			state->V[inst.secondNib] = state->V[inst.secondNib] & state->V[inst.secondByte >> 4]; 
 			break;
 		case 0x03:
 			//Bitwise XOR: Vx XOR Vy
-			state->V[inst.firstNib] = state->V[inst.firstNib] ^ state->V[inst.secondByte >> 4]; 
+			state->V[inst.secondNib] = state->V[inst.secondNib] ^ state->V[inst.secondByte >> 4]; 
 			break;
 		case 0x04:
 			// Set Vx = Vx + Vy, if result is bigger than 8 bits (result > 255) VF is set to 1 (carry)
-			if(0xFF < state->V[inst.firstNib] + state->V[inst.secondByte >> 4])
+			if(0xFF < state->V[inst.secondNib] + state->V[inst.secondByte >> 4])
 			{
 				state->V[0x0F] = 0x01;
 			}
-			state->V[inst.firstNib] = state->V[inst.firstNib] + state->V[inst.secondByte >> 4];  
+			state->V[inst.secondNib] = state->V[inst.secondNib] + state->V[inst.secondByte >> 4];  
 			break;
 		case 0x05:
 			// Set Vx = Vx - Vy if Vx > Vy then VF is set to 1 (not borrow), otherwise 0. Then Vy is subtracted from Vx and stored in Vx 
-			if(state->V[inst.firstNib] > state->V[inst.secondByte >> 4])
+			if(state->V[inst.secondNib] > state->V[inst.secondByte >> 4])
 			{
 				state->V[0x0F] = 0x01; // not borrow
 			}
-			state->V[inst.firstNib] = state->V[inst.firstNib] - state->V[inst.secondByte >> 4];  
+			state->V[inst.secondNib] = state->V[inst.secondNib] - state->V[inst.secondByte >> 4];  
 			break;
 		case 0x06:
 			// Set Vx = Vx Right Shift 1 if the least-significant bit of Vx is 1, then VF is set to 1, otherwise 0
-			if(0x01 & state->V[inst.firstNib])
+			if(0x01 & state->V[inst.secondNib])
 			{
 				state->V[0x0F] = 0x01;
 			}
-			state->V[inst.firstNib] = state->V[inst.firstNib] >> 1;
+			state->V[inst.secondNib] = state->V[inst.secondNib] >> 1;
 			break;
 		case 0x07:
-			// TO-DO
+			// Set Vx = Vy - Vx if Vy > Vx then VF is set to 1 (not borrow), otherwise 0. Then Vx is subtracted from Vy and stored in Vx
+			if(state->V[inst.secondByte >> 4] > state->V[inst.secondNib])
+			{
+				state->V[0x0F] = 0x01; // not borrow
+			}
+			state->V[inst.secondNib] = state->V[inst.secondByte >> 4] - state->V[inst.secondNib];  
+			break;
+		case 0x0E:
+			//Set Vx = Vx Left Shift 1 if most-significant bit of Vx is 1, then VF is set to 1, otherwise 0
+			if(0x08 & state->V[inst.secondNib])
+			{
+				state->V[0x0F] = 0x01;
+			}
+			state->V[inst.secondNib] = state->V[inst.secondNib] << 1;
+			break; 
 		default:
 			fprintf(stderr, "Error aritmethic instrucion not avalible: %02x\n",inst.finalNib);
 			break;
@@ -174,6 +187,7 @@ void Arithmetic(State * state, Instruction inst) // OR, AND, XOR, ADD, SUB, SHR,
 
 void SetAddress(State * state, Instruction inst) // LD I, nnn [I = nnn]
 {
+	//Stores inmediate value nnn to the register I (memory register)
 	uint16_t dir = (0x0000 | inst.secondNib) << 8;
 	dir = dir | inst.secondByte; 
 	state->I = dir;
@@ -210,5 +224,13 @@ void SkipIfKeNotPress(State * state, Instruction inst) // SKNP Vx
 void MiscInstruction(State * state, Instruction inst) // 0x0F instructions
 {
 	//TO-DO
+	switch(inst.secondByte)
+	{
+		case 0x07:
+			//Set Vx = DT, load the value of the delay timer on register Vx
+			state->V[inst.secondNib] = state->DT;
+			break;
+			
+	}
 }
 
