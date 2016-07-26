@@ -33,9 +33,10 @@ State * InitChip8()
 {
 	State * chip8State = calloc(1, sizeof(State));
 	chip8State->memory = calloc(1024*4, 1);
-	chip8State->screen = chip8State->memory[0xF00];
-	chip8State->SP = 0xEA0; //Metemos e incrementamos el sp, sacamos y decrementamos el sp
+	chip8State->screen = chip8State->memory[0xF00]; // Or implement as an array of pixels?
+	chip8State->SP = 0xEA0;
 	chip8State->PC = 0x200;
+	chip8State->I = 0x0000;
 	chip8State->V = calloc(16,sizeof(uint8_t);
 	chip8State->keys = calloc(16, sizeof(uint8_t));
 	return chip8State;

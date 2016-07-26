@@ -230,7 +230,50 @@ void MiscInstruction(State * state, Instruction inst) // 0x0F instructions
 			//Set Vx = DT, load the value of the delay timer on register Vx
 			state->V[inst.secondNib] = state->DT;
 			break;
-			
+		case 0x0A:
+			// Wait for a key press and store value of the key in Vx, execution stops until a key is pressed
+			//TO-DO
+			break;
+		case 0x15:
+			//Set DT = Vx, DT is set equal to the value of Vx
+			state->DT = state->V[inst.secondNib];
+			break;
+		case 0x18:
+			// Set sound timer = Vx, ST is set equal to the value of Vx
+			state->ST = state->V[inst.secondNib];
+			break;
+		case 0x1E:
+			// Set I = I + Vx, values of I and Vx are added and stored in I
+			state->I = state->I + state->V[inst.secondNib];
+			break;
+		case 0x29:
+			//Set I = location of sprite for digit Vx, value of I is set to the location for the hexadecimal 
+			//sprite corresponding to the value of Vx, and sprite of letters [0-F];
+			//TO-DO, research where are the sprites located on chip8 RAM
+			break;
+		case 0x33:
+			//Store BCD representation of Vx in memory locations I, I+1, I+2. 
+			//TO-DO
+			break;
+		case 0x55:
+			//Store registers V0 trough Vx in memory starting at location I
+			uint8_t i = 0x00;
+			while(i <= state->V[inst.secondNib])
+			{
+				state->memory[state->I+i] = state->V[i];
+			}
+			break;
+		case 0x65:
+			//Read registers V0 through Vx from memory starting at location I
+			uint8_t i = 0x00;
+			while(i <= state->V[inst.secondNib])
+			{
+				 state->V[i] = state->memory[state->I+i];
+			}
+			break;
+		default:
+			fprintf(stderr,"Error, unavalible miscelaneous instruction: %02x\n",inst.secondByte);
+			exit(1);
 	}
 }
 
