@@ -1,7 +1,6 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdint.h>
-#include <time.h>
 #include "emulator.h"
 #include "operations.h"
 
@@ -9,8 +8,8 @@
 typedef struct Chip8State{
 	uint16_t PC;
 	uint16_t I; //Special memory address register
+	uint16_t SP;
 	uint8_t V[16];
-	uint8_t SP;
 	uint8_t DT;
 	uint8_t ST;
 	uint8_t * memory;
@@ -22,11 +21,10 @@ typedef struct Instruction{
 	uint8_t firstNib;
 	uint8_t secondNib;
 	uint8_t finalNib;
-	uint16_t firstByte;
-	uint16_t secondByte;
-} Instruction; 
-
-*/ 
+	uint8_t firstByte;
+	uint8_t secondByte;
+} Instruction;
+*/
 
 // Instrucion implementations
 void JumpCallReturn(State * state, Instruction inst) // SYS, JP, CALL, RET
@@ -34,10 +32,10 @@ void JumpCallReturn(State * state, Instruction inst) // SYS, JP, CALL, RET
 	switch(inst.firstNib)
 	{
 		case 0x00:
-			// RET: sets PC to the adress o top of the stack and decrements the stack pointer
+			// RET: sets PC to the adress on top of the stack and decrements the stack pointer
 			if(inst.firstByte == 0x00 && inst.secondByte == 0xEE) 
 			{
-				state->PC = (0x0F & state->memory[state->SP]) << 8; // Alomejor solo se necesita un shift de 8 bits
+				state->PC = (0x0F & state->memory[state->SP]) << 8; // Maybe only needs a shift of 8 bits
 				state->PC = state->PC | state->memory[state->SP+1];
 				state->SP -= 2; 
 			}
@@ -72,7 +70,7 @@ void JumpCallReturn(State * state, Instruction inst) // SYS, JP, CALL, RET
 
 void ClearScreen(State * state, Instruction inst) // CLS
 {
-	//TO-DO
+	memset(state->screen,0,SCREEN_SIZE);
 }
 
 void SkipIfEqualIn(State * state, Instruction inst) // SE Vx, nn [Skip if Vx == nn]
@@ -195,7 +193,6 @@ void SetAddress(State * state, Instruction inst) // LD I, nnn [I = nnn]
 
 void Random(State * state, Instruction inst) // RND Vx, nn
 {
-	srand(time(NULL));
 	uint8_t n = rand() % 256;
 	state->V[inst.secondNib] = n & ins.secondByte;
 }

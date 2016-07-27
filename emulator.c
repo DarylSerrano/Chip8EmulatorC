@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <string.h>
+#include <time.h>
 #include "emulator.h"
 #include "operations.h"
 
@@ -9,8 +10,8 @@
 typedef struct Chip8State{
 	uint16_t PC;
 	uint16_t I; //Special memory address register
+	uint16_t SP;
 	uint8_t V[16];
-	uint8_t SP;
 	uint8_t DT;
 	uint8_t ST;
 	uint8_t * memory;
@@ -22,23 +23,152 @@ typedef struct Instruction{
 	uint8_t firstNib;
 	uint8_t secondNib;
 	uint8_t finalNib;
-	uint16_t firstByte;
-	uint16_t secondByte;
-} Instruction; 
-
-*/ 
+	uint8_t firstByte;
+	uint8_t secondByte;
+} Instruction;
+*/
 
 // Initializes the state of the cpu
 State * InitChip8()
 {
 	State * chip8State = calloc(1, sizeof(State));
-	chip8State->memory = calloc(1024*4, 1);
-	chip8State->screen = chip8State->memory[0xF00]; // Or implement as an array of pixels?
+	chip8State->memory = malloc(1024*4);
+	memset(chip8State->memory,0,1024*4);
+	chip8State->screen = &chip8State->memory[SCREEN_BASE]; 
 	chip8State->SP = 0xEA0;
 	chip8State->PC = 0x200;
-	chip8State->I = 0x0000;
-	chip8State->V = calloc(16,sizeof(uint8_t);
-	chip8State->keys = calloc(16, sizeof(uint8_t));
+	chip8State->I = 0x0;
+	/*
+	int i;
+	for(i=0; i < 16; ++i)
+	{
+		chip8State->V[i] = 0x0;
+		chip8State->keys[i] = 0x0;
+	}
+	*/
+	
+	memset(chip8State->V,0,sizeof(uint8_t)*16);
+	memset(chip8State->keys,0,sizeof(uint8_t)*16);
+	
+	//Initialize fonts
+	uint8_t fonts[] = {
+		//0
+		0xF0,
+		0x90,
+		0X90,
+		0X90,
+		0XF0,
+		
+		//1
+		0x20,
+		0x60,
+		0x20,
+		0x20,
+		0x70,
+		
+		//2
+		0xF0,
+		0x10,
+		0xF0,
+		0x80,
+		0xF0,
+		
+		//3
+		0xF0,
+		0x10,
+		0xF0,
+		0x10,
+		0xF0,
+		
+		//4
+		0x90,
+		0x90,
+		0xF0,
+		0x10,
+		0x10,
+		
+		//5
+		0xF0,
+		0x80,
+		0xF0,
+		0x10,
+		0xF0,
+		
+		//6
+		0xF0,
+		0x80,
+		0xF0,
+		0x90,
+		0xF0,
+		
+		//7
+		0xF0,
+		0x10,
+		0x20,
+		0x40,
+		0x40,
+		
+		//8
+		0xF0,
+		0x90,
+		0xF0,
+		0x90,
+		0xF0,
+		
+		//9
+		0xF0,
+		0x90,
+		0xF0,
+		0x10,
+		0xF0,
+		
+		//A
+		0xF0,
+		0x90,
+		0xF0,
+		0x90,
+		0x90,
+		
+		//B
+		0xE0,
+		0x90,
+		0xE0,
+		0x90,
+		0xE0,
+		
+		//C
+		0xF0,
+		0x80,
+		0x80,
+		0x80,
+		0xF0,
+		
+		//D
+		0xE0,
+		0x90,
+		0x90,
+		0x90,
+		0xE0,
+		
+		//E
+		0xF0,
+		0x80,
+		0xF0,
+		0x80,
+		0xF0,
+		
+		//F
+		0xF0,
+		0x80,
+		0xF0,
+		0x80,
+		0x80,
+	};
+	
+	memcpy(chip8State->memory,fonts,FONT_SIZE);
+	
+	srand(time(NULL)); //For RND instruction
+
 	return chip8State;
 }
 

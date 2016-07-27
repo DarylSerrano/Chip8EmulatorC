@@ -1,10 +1,14 @@
 #include <stdint.h>
 
+#define FONT_SIZE	5*16 // 5 bytes per font
+#define SCREEN_BASE	0xF00
+#define	SCREEN_SIZE	256
+
 typedef struct Chip8State{
 	uint16_t PC;
 	uint16_t I; //Special memory address register
+	uint16_t SP;
 	uint8_t V[16];
-	uint8_t SP;
 	uint8_t DT;
 	uint8_t ST;
 	uint8_t * memory;

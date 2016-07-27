@@ -5,6 +5,8 @@
 #include "emulator.h"
 #include "operations.h"
 
+//TO-DO
+
 // Initializes the state of the cpu
 State * InitChip8()
 {
