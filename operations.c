@@ -245,12 +245,20 @@ void MiscInstruction(State * state, Instruction inst) // 0x0F instructions
 			break;
 		case 0x29:
 			//Set I = location of sprite for digit Vx, value of I is set to the location for the hexadecimal 
-			//sprite corresponding to the value of Vx, and sprite of letters [0-F];
-			//TO-DO, research where are the sprites located on chip8 RAM
+			//sprite corresponding to the value of Vx, and sprite of letters [0-F]
+			state->I = (state->V[inst.secondNib]*5); //Because letters are stored from 0x000 to 0x06E
 			break;
 		case 0x33:
-			//Store BCD representation of Vx in memory locations I, I+1, I+2. 
-			//TO-DO
+			//Store BCD representation of Vx in memory locations I(hundreds digit), I+1 (tens digit), I+2 (ones digit). 
+			uint8_t ones, tens, hundreds;
+			uint8_t number = state->V[inst.secondNib];
+			ones = number % 10;
+			number = number / 10;
+			tens = number % 10;
+			hundreds = number / 10;
+			state-memory[state->I] = hundreds;
+			state->memory[state->I+1] = tens;
+			state->memory[state->I+2] = ones; 
 			break;
 		case 0x55:
 			//Store registers V0 trough Vx in memory starting at location I

@@ -1,7 +1,7 @@
 #include <stdint.h>
 
 #define FONT_SIZE	5*16 // 5 bytes per font
-#define SCREEN_BASE	0xF00
+#define SCREEN_BASE	0xF00 // Goes from 0xF00 to 0xFFF
 #define	SCREEN_SIZE	256
 
 typedef struct Chip8State{
