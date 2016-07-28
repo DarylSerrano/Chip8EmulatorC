@@ -1,5 +1,5 @@
 *.out
 /test.c
 SDL*.c
-SLD*.out
+SDL*.out
 *.ch8
