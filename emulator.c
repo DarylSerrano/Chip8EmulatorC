@@ -483,7 +483,10 @@ void Execute(State * state, Instruction inst)
 			{
 				ClearScreen(state,inst);
 			}
-			else
+			else if(inst.firstByte == 0x00 && inst.secondByte == 0x00) 
+			{
+				//NOOP Instruction
+			}else
 			{
 				JumpCallReturn(state,inst);
 			}

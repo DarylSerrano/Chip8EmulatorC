@@ -211,6 +211,8 @@ int main(int argc, char ** argv)
 		}
 	}
 	
+	fclose(file);
+	
 	// Set the program counter (PC), Chip-8 programs start at 0x200
 	pc = 0x200;
 	
@@ -221,8 +223,6 @@ int main(int argc, char ** argv)
 		pc += 2;
 		printf("\n");
 	}
-	
-	fclose(file);
 	
 	return 0;
 }
