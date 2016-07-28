@@ -1,4 +1,9 @@
+#include <stdlib.h>
+#include <stdio.h>
 #include <stdint.h>
+#include <string.h>
+#include <time.h>
+#include <errno.h>
 
 #define FONT_SIZE	5*16 // 5 bytes per font
 #define SCREEN_BASE	0xF00 // Goes from 0xF00 to 0xFFF
@@ -28,6 +33,9 @@ typedef struct Instruction{
 // Initializes the state of the cpu
 State * InitChip8();
 
+//Load a room
+void LoadRoom(State * state, char * path);
+
 // Decodes instruction and prints to the console for debugging
 void Decode(uint8_t * code, uint16_t pc, Instruction * inst);
 
@@ -39,3 +47,4 @@ void Execute(State * state, Instruction inst);
 
 // Advance pc
 void Advance(State * state);
+

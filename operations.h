@@ -1,5 +1,4 @@
 #include <stdint.h>
-#include "emulator.h"
 
 // Instrucion implementations
 void JumpCallReturn(State * state, Instruction inst); // SYS, JP, CALL, RET

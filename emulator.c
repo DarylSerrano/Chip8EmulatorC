@@ -1,8 +1,3 @@
-#include <stdlib.h>
-#include <stdio.h>
-#include <stdint.h>
-#include <string.h>
-#include <time.h>
 #include "emulator.h"
 #include "operations.h"
 
@@ -181,6 +176,53 @@ void Decode(uint8_t * code, uint16_t pc, Instruction * inst)
 	inst->secondNib = (code[pc] & 0x0f);
 	inst->finalNib = (code[pc+1] & 0x0f);
 	
+}
+
+//Load a room
+void LoadRoom(State * state, char * path)
+{
+	FILE * file;
+	long size;
+	
+	if(NULL == (file = fopen(path,"rb")))
+	{
+		fprintf(stderr,"Error loading the rom\n");
+		exit(1);
+	}
+	
+	//Get size of the file in bytes
+	if(-1 == (fseek(file, 0L, SEEK_END)))
+	{
+		fprintf(stderr,"Error setting file position to end\n");
+		exit(1);
+	}
+	size = ftell(file);
+	if(-1 == (fseek(file, 0L, SEEK_SET)))
+	{
+		fprintf(stderr,"Error setting file position to begining\n");
+		exit(1);
+	}
+	
+	//Read the file and store it on the memory of the chip-8
+	if(0 == (fread(state->memory[state->PC], size, 1, file)))
+	{
+		if(ferror(file))
+		{
+			fprintf(stderr,"Error reading the file\n");
+			exit(1);
+		}
+		else
+		{
+			fprintf(stderr,"End of file reached, cant read more\n");
+			exit(1);
+		}
+	}
+	
+	if( 0 != fclose(file))
+	{
+		fprintf(stderr,"Error upon closing file stream\n");
+		exit(1);
+	}
 }
 
 // Advance pc

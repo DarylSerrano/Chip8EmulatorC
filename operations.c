@@ -1,7 +1,3 @@
-#include <stdlib.h>
-#include <stdio.h>
-#include <stdint.h>
-#include "emulator.h"
 #include "operations.h"
 
 /*
@@ -35,7 +31,7 @@ void JumpCallReturn(State * state, Instruction inst) // SYS, JP, CALL, RET
 			// RET: sets PC to the adress on top of the stack and decrements the stack pointer
 			if(inst.firstByte == 0x00 && inst.secondByte == 0xEE) 
 			{
-				state->PC = (0x0F & state->memory[state->SP]) << 8; // Maybe only needs a shift of 8 bits
+				state->PC = (0x000F & state->memory[state->SP]) << 8; 
 				state->PC = state->PC | state->memory[state->SP+1];
 				state->SP -= 2; 
 			}

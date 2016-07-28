@@ -1,15 +1,22 @@
-#include <stdlib.h>
-#include <stdio.h>
-#include <stdint.h>
-#include <string.h>
 #include "emulator.h"
 #include "operations.h"
 
-//TO-DO
 
 
 int main(int argc, char ** argv)
 {
+	//	Initialize CHip-8 and display
+	//	Load rom
+	//	Main Loop:
+	//		Fetch instruction
+	//		Decode instruction
+	//		Execute instruction
+	//		Draw display
+	//		Refresh flags
+	//		Process Inputs
+	
+	
+	
 	return 0;
 }
 
