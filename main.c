@@ -33,7 +33,8 @@ int main(int argc, char ** argv)
 		//Draw
 		RefreshTimer(chip8State);
 		//Process Inputs
-		Advance(chip8State);
+		if(chip8State->waitKey == 0)
+			Advance(chip8State);
 	}
 	
 	ExitEmu(chip8State, inst);

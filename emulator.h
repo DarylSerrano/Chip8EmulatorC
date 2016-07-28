@@ -5,6 +5,9 @@
 #include <time.h>
 #include <errno.h>
 
+#ifndef EMULATOR_H_INCLUDED
+#define	EMULATOR_H_INCLUDED
+
 #define FONT_SIZE	5*16 // 5 bytes per font
 #define SCREEN_BASE	0xF00 // Goes from 0xF00 to 0xFFF
 #define	SCREEN_SIZE	256
@@ -19,6 +22,7 @@ typedef struct Chip8State{
 	uint8_t * memory;
 	uint8_t * screen;
 	uint8_t keys[16];
+	uint8_t waitKey;
 } State;
 
 typedef struct Instruction{
@@ -84,4 +88,4 @@ void MiscInstruction(State * state, Instruction inst); // 0x0F instructions
 // Executes the current instruction
 void Execute(State * state, Instruction inst);
 
-
+#endif // EMULATOR_H_INCLUDED
