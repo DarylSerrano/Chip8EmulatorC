@@ -45,6 +45,9 @@ void Advance(State * state);
 // Exit emulator
 void ExitEmu(State * state, Instruction * inst);
 
+//Refresh Timers
+void RefreshTimer(State * state);
+
 // Instrucion implementations
 void JumpCallReturn(State * state, Instruction inst); // SYS, JP, CALL, RET
 

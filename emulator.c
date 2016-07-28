@@ -209,6 +209,16 @@ void ExitEmu(State * state, Instruction * inst)
 	free(inst);
 }
 
+//Refresh Timers
+void RefreshTimer(State * state)
+{
+	if(state->DT > 0)
+		state->DT -= 1;
+	
+	if(state->ST > 0)
+		state->ST -= 1;
+}
+
 // Advance pc
 void Advance(State * state)
 {
