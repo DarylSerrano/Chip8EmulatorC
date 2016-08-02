@@ -20,12 +20,20 @@ int main(int argc, char ** argv)
 		exit(1);
 	}
 	
+	//Display Variables
+	SDL_Window * eWindow;
+	SDL_Renderer * eRenderer;
+	
+	// Init emulator state
 	State * chip8State = InitChip8();
 	Instruction * inst = malloc(sizeof(Instruction));
+	
 	//Initialize display
+	InitDisplay(&eWindow, &eRenderer);
 	
-	LoadRoom(chip8State,argv[1]);
+	//LoadRoom(chip8State,argv[1]);
 	
+	/*
 	for(;;)
 	{
 		Decode(chip8State->memory,chip8State->PC,inst);
@@ -38,6 +46,11 @@ int main(int argc, char ** argv)
 	}
 	
 	ExitEmu(chip8State, inst);
+	*/
+	
+	ExitEmu(chip8State, inst);
+	
+	CloseDisplay(eWindow, eRenderer);
 	
 	return 0;
 }

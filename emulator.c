@@ -6,13 +6,15 @@ State * InitChip8()
 	State * chip8State = calloc(1, sizeof(State));
 	chip8State->memory = malloc(1024*4);
 	memset(chip8State->memory,0,1024*4);
-	chip8State->screen = &chip8State->memory[SCREEN_BASE]; 
+	memset(chip8State->screen,0,sizeof(chip8State->screen[0][0])*64*32); //Or in sizeof use uint8_t
+	//chip8State->screen = &chip8State->memory[SCREEN_BASE]; 
 	chip8State->SP = 0xEA0;
 	chip8State->PC = 0x200;
 	chip8State->I = 0x0;
 	chip8State->DT = 0x0;
 	chip8State->ST = 0x0;
 	chip8State->waitKey = 0x0;
+	chip8State->drawFlag = 0x0;
 	
 	/*
 	int i;
@@ -165,6 +167,70 @@ void Advance(State * state)
 	state->PC += 2;
 }
 
+//	Initialize the display 
+void InitDisplay(SDL_Window ** eWindow, SDL_Renderer ** eRenderer)
+{
+	if(SDL_Init(SDL_INIT_VIDEO) != 0)
+	{
+		fprintf(stderr,"Error on initializing display: %s\n",SDL_GetError());
+		exit(1); 
+	}
+	
+	*eWindow = SDL_CreateWindow("Chip-8 Emulator",
+								SDL_WINDOWPOS_UNDEFINED,
+								SDL_WINDOWPOS_UNDEFINED,
+								DISPLAY_WIDHT,
+								DISPLAY_HEIGHT,
+								0);
+	
+	if( NULL == *eWindow)
+	{
+		fprintf(stderr,"Error creating main window: %s\n",SDL_GetError());
+		exit(1);
+	}
+	
+	// Create renderer
+	if(NULL == (*eRenderer = SDL_CreateRenderer(*eWindow, -1, SDL_RENDERER_ACCELERATED)))
+	{
+		fprintf(stderr,"Error creating renderer: %s\n",SDL_GetError());
+		exit(1);
+	}
+	
+	// Initialize renderer color
+	if(SDL_SetRenderDrawColor(*eRenderer, 0x00, 0x00, 0x00, 0x00) < 0) // Block color with no alpha
+	{
+		fprintf(stderr,"Error setting renderer draw color: %s\n",SDL_GetError());
+		exit(1);
+	}
+	
+	// Clear current rendering target
+	SDL_RenderClear(*eRenderer);
+	
+	// Updates the screen
+	SDL_RenderPresent(*eRenderer);
+	
+	/*
+	//Initialize SDL_image library
+	int imgflags = IMG_INIT_PNG | IMG_INIT_JPG;
+	
+	if( !(IMG_Init(imgflags) & imgflags))
+	{
+		fprintf(stderr, "Error loading SDL_image library: %s\n",IMG_GetError());
+		exit(1);
+	}
+	*/
+	
+}
+
+//	Close the display
+void CloseDisplay(SDL_Window * eWindow, SDL_Renderer * eRenderer)
+{
+	SDL_DestroyRenderer(eRenderer);
+	SDL_DestroyWindow(eWindow);
+	//IMG_Quit();
+	SDL_Quit();
+}
+
 //	Instrucion implementations
 void JumpCallReturn(State * state, Instruction inst) // SYS, JP, CALL, RET
 {
@@ -210,7 +276,8 @@ void JumpCallReturn(State * state, Instruction inst) // SYS, JP, CALL, RET
 
 void ClearScreen(State * state, Instruction inst) // CLS
 {
-	memset(state->screen,0,SCREEN_SIZE);
+	//memset(state->screen,0,SCREEN_SIZE);
+	memset(state->screen,0,sizeof(state->screen[0][0])*64*32);
 }
 
 void SkipIfEqualIn(State * state, Instruction inst) // SE Vx, nn [Skip if Vx == nn]
@@ -337,9 +404,45 @@ void Random(State * state, Instruction inst) // RND Vx, nn
 	state->V[inst.secondNib] = n & inst.secondByte;
 }
 
-void Draw(State * state, Instruction inst) // DRW Vx, Vy, n(nibble)
-{
-	//TO-DO
+void Draw(State * state, Instruction inst, SDL_Renderer * eRenderer) // DRW Vx, Vy, n(nibble) 
+{	// Draws an sprite of 8 pixels wide and n pixels high (max 16 pixel high) and set VF to 0 or 1
+	// TO-DO
+	SDL_Rect rectangle;
+	int x = (int) state->V[inst.secondNib];
+	int y = (int) state->V[inst.secondByte >> 4];
+	int n = (int) inst.finalNib;
+	uint8_t byte;
+	
+	int i = 0;
+	int j = 0;
+	for(; i < n; ++i) // y pos
+	{
+		for(;j < 8; ++j) // x pos
+		{
+			byte =  (state->memory[state->I+i] >> (8 - j+1)) & 0x01;
+			if(byte != state->screen[y+i][x+j]) // Pixel change, set register VF, draw and update screen array
+			{	
+				state->drawFlag = 0x01; // Set to update the screen
+				state->V[0xF] = 0x01; // Set VF flag
+				state->screen[y+i][x+j] = byte; // Update screen array
+				// Set rectangle to render on screen
+				rectangle.x = (x+j) * 10;
+				rectangle.y = (y+i) * 10;
+				rectangle.w	= 10;
+				rectangle.h = 10;
+				if(byte) // 1 == White
+				{
+					SDL_SetRenderDrawColor(eRenderer, WHITE, WHITE, WHITE, OPAQUE);
+				}
+				else // 0 == Black
+				{
+					SDL_SetRenderDrawColor(eRenderer, BLACK, BLACK, BLACK, OPAQUE);
+				}
+				SDL_RenderFillRect(eRenderer, &rectangle);
+			}
+		}
+	}
+	  
 }
 
 void SkipIfKeyPress(State * state, Instruction inst) // SKP Vx
@@ -372,6 +475,19 @@ void MiscInstruction(State * state, Instruction inst) // 0x0F instructions
 		case 0x0A:
 			// Wait for a key press and store value of the key in Vx, execution stops until a key is pressed
 			//TO-DO
+			if(state->waitKey)
+			{
+			/*	if(//keyPressed)
+				{
+					// storekey
+					// advance pc
+					state->waitKey = 0x00:
+				} */
+			}
+			else
+			{
+				state->waitKey = 0x01;
+			}
 			break;
 		case 0x15:
 			//Set DT = Vx, DT is set equal to the value of Vx
@@ -424,7 +540,7 @@ void MiscInstruction(State * state, Instruction inst) // 0x0F instructions
 }
 
 // Executes the current instruction
-void Execute(State * state, Instruction inst)
+void Execute(State * state, Instruction inst, SDL_Renderer * eRenderer)
 {
 	switch(inst.firstNib)
 	{
@@ -478,7 +594,7 @@ void Execute(State * state, Instruction inst)
 			Random(state, inst);
 			break;
 		case 0x0D:
-			Draw(state, inst);
+			Draw(state, inst, eRenderer);
 			break;
 		case 0x0E:
 			if(inst.secondByte == 0x9E)

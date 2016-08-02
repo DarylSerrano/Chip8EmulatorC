@@ -4,13 +4,21 @@
 #include <string.h>
 #include <time.h>
 #include <errno.h>
+#include <SDL2/SDL.h>
+//#include <SDL2/SDL_image.h>
 
 #ifndef EMULATOR_H_INCLUDED
 #define	EMULATOR_H_INCLUDED
 
-#define FONT_SIZE	5*16 // 5 bytes per font
-#define SCREEN_BASE	0xF00 // Goes from 0xF00 to 0xFFF
-#define	SCREEN_SIZE	256
+// Macros
+#define FONT_SIZE		5*16 // 5 bytes per font
+#define SCREEN_BASE		0xF00 // Goes from 0xF00 to 0xFFF
+#define	SCREEN_SIZE		256
+#define	DISPLAY_WIDHT	640 
+#define	DISPLAY_HEIGHT	320
+#define WHITE			0xFF
+#define BLACK			0x00
+#define OPAQUE			0x00
 
 typedef struct Chip8State{
 	uint16_t PC;
@@ -20,9 +28,11 @@ typedef struct Chip8State{
 	uint8_t DT;
 	uint8_t ST;
 	uint8_t * memory;
-	uint8_t * screen;
+	uint8_t	screen[32][64]; //[y][x]
+	//uint8_t * screen;
 	uint8_t keys[16];
 	uint8_t waitKey;
+	uint8_t drawFlag;
 } State;
 
 typedef struct Instruction{
@@ -32,7 +42,6 @@ typedef struct Instruction{
 	uint8_t firstByte;
 	uint8_t secondByte;
 } Instruction;
-
 
 // Initializes the state of the cpu
 State * InitChip8();
@@ -51,6 +60,12 @@ void ExitEmu(State * state, Instruction * inst);
 
 //Refresh Timers
 void RefreshTimer(State * state);
+
+//	Initialize the display 
+void InitDisplay(SDL_Window ** eWindow, SDL_Renderer ** eRenderer);
+
+//	Close the display
+void CloseDisplay(SDL_Window * eWindow, SDL_Renderer * eRenderer);
 
 // Instrucion implementations
 void JumpCallReturn(State * state, Instruction inst); // SYS, JP, CALL, RET
@@ -77,7 +92,7 @@ void SetAddress(State * state, Instruction inst); // LD I, nnn [I = nnn]
 
 void Random(State * state, Instruction inst); // RND Vx, nn
 
-void Draw(State * state, Instruction inst); // DRW Vx, Vy, n(nibble)
+void Draw(State * state, Instruction inst, SDL_Renderer * eRenderer); // DRW Vx, Vy, n(nibble)
 
 void SkipIfKeyPress(State * state, Instruction inst); // SKP Vx
 
@@ -86,6 +101,6 @@ void SkipIfKeNotPress(State * state, Instruction inst); // SKNP Vx
 void MiscInstruction(State * state, Instruction inst); // 0x0F instructions
 
 // Executes the current instruction
-void Execute(State * state, Instruction inst);
+void Execute(State * state, Instruction inst, SDL_Renderer * eRenderer);
 
 #endif // EMULATOR_H_INCLUDED
