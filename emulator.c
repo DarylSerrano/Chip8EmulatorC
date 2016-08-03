@@ -141,7 +141,6 @@ void Decode(uint8_t * code, uint16_t pc, Instruction * inst)
 	inst->firstNib = (code[pc] >> 4);
 	inst->secondNib = (code[pc] & 0x0f);
 	inst->finalNib = (code[pc+1] & 0x0f);
-	
 }
 
 // Exit emulator
@@ -190,25 +189,25 @@ void InitDisplay(SDL_Window ** eWindow, SDL_Renderer ** eRenderer)
 	}
 	
 	// Create renderer
-	if(NULL == (*eRenderer = SDL_CreateRenderer(*eWindow, -1, SDL_RENDERER_ACCELERATED)))
+	if(NULL == (*eRenderer = SDL_CreateRenderer(*eWindow, -1, SDL_RENDERER_SOFTWARE)))
 	{
 		fprintf(stderr,"Error creating renderer: %s\n",SDL_GetError());
 		exit(1);
 	}
 	
 	// Initialize renderer color
-	if(SDL_SetRenderDrawColor(*eRenderer, 0x00, 0x00, 0x00, 0x00) < 0) // Block color with no alpha
+	if(SDL_SetRenderDrawColor(*eRenderer, BLACK, BLACK, BLACK, OPAQUE) < 0) // Block color with no alpha
 	{
 		fprintf(stderr,"Error setting renderer draw color: %s\n",SDL_GetError());
 		exit(1);
 	}
-	
-	// Clear current rendering target
+
+	// Clear Renderer
 	SDL_RenderClear(*eRenderer);
 	
-	// Updates the screen
+	//Update Screen
 	SDL_RenderPresent(*eRenderer);
-	
+
 	/*
 	//Initialize SDL_image library
 	int imgflags = IMG_INIT_PNG | IMG_INIT_JPG;
@@ -229,6 +228,82 @@ void CloseDisplay(SDL_Window * eWindow, SDL_Renderer * eRenderer)
 	SDL_DestroyWindow(eWindow);
 	//IMG_Quit();
 	SDL_Quit();
+}
+
+// Process Input
+void ProcessInput(State * state)
+{
+	const uint8_t * keyStates = SDL_GetKeyboardState(NULL);
+
+	// Clear array tsate
+	memset(state->keys, 0, sizeof(uint8_t) * 16);
+
+	// Update state of keys, form more information about keybinds, check emulator.h
+	if (keyStates[SDL_SCANCODE_B])
+	{
+		state->keys[0x00] = 0x01;
+	}
+	else if (keyStates[SDL_SCANCODE_4])
+	{
+		state->keys[0x01] = 0x01;
+	}
+	else if (keyStates[SDL_SCANCODE_5])
+	{
+		state->keys[0x02] = 0x01;
+	}
+	else if (keyStates[SDL_SCANCODE_6])
+	{
+		state->keys[0x03] = 0x01;
+	}
+	else if (keyStates[SDL_SCANCODE_R])
+	{
+		state->keys[0x04] = 0x01;
+	}
+	else if (keyStates[SDL_SCANCODE_T])
+	{
+		state->keys[0x05] = 0x01;
+	}
+	else if (keyStates[SDL_SCANCODE_Y])
+	{
+		state->keys[0x06] = 0x01;
+	}
+	else if (keyStates[SDL_SCANCODE_F])
+	{
+		state->keys[0x07] = 0x01;
+	}
+	else if (keyStates[SDL_SCANCODE_G])
+	{
+		state->keys[0x08] = 0x01;
+	}
+	else if (keyStates[SDL_SCANCODE_H])
+	{
+		state->keys[0x09] = 0x01;
+	}
+	else if (keyStates[SDL_SCANCODE_V])
+	{
+		state->keys[0x0A] = 0x01;
+	}
+	else if (keyStates[SDL_SCANCODE_N])
+	{
+		state->keys[0x0B] = 0x01;
+	}
+	else if (keyStates[SDL_SCANCODE_7])
+	{
+		state->keys[0x0C] = 0x01;
+	}
+	else if (keyStates[SDL_SCANCODE_U])
+	{
+		state->keys[0x0D] = 0x01;
+	}
+	else if (keyStates[SDL_SCANCODE_J])
+	{
+		state->keys[0x0E] = 0x01;
+	}
+	else if (keyStates[SDL_SCANCODE_M])
+	{
+		state->keys[0x0F] = 0x01;
+	}
+
 }
 
 //	Instrucion implementations
@@ -274,10 +349,15 @@ void JumpCallReturn(State * state, Instruction inst) // SYS, JP, CALL, RET
 	}
 }
 
-void ClearScreen(State * state, Instruction inst) // CLS
+void ClearScreen(State * state, Instruction inst, SDL_Renderer * eRenderer) // CLS
 {
 	//memset(state->screen,0,SCREEN_SIZE);
 	memset(state->screen,0,sizeof(state->screen[0][0])*64*32);
+	// Set all to black
+	SDL_SetRenderDrawColor(eRenderer, BLACK, BLACK, BLACK, OPAQUE);
+	SDL_RenderClear(eRenderer);
+	// Set draw flag
+	state->drawFlag = 0x01;
 }
 
 void SkipIfEqualIn(State * state, Instruction inst) // SE Vx, nn [Skip if Vx == nn]
@@ -412,11 +492,15 @@ void Draw(State * state, Instruction inst, SDL_Renderer * eRenderer) // DRW Vx, 
 	int y = (int) state->V[inst.secondByte >> 4];
 	int n = (int) inst.finalNib;
 	uint8_t byte;
+
+	//Set draw flag
+	state->drawFlag = 0x00;
 	
 	int i = 0;
-	int j = 0;
+	int j;
 	for(; i < n; ++i) // y pos
 	{
+		j = 0;
 		for(;j < 8; ++j) // x pos
 		{
 			byte =  (state->memory[state->I+i] >> (8 - j+1)) & 0x01;
@@ -477,24 +561,34 @@ void MiscInstruction(State * state, Instruction inst) // 0x0F instructions
 			//TO-DO
 			if(state->waitKey)
 			{
-			/*	if(//keyPressed)
+				uint8_t i = 0x00;
+				int quit = 0;
+				while (i < 0x0F && !quit) // 16 buttons
 				{
-					// storekey
-					// advance pc
-					state->waitKey = 0x00:
-				} */
+					if (state->keys[i])
+					{
+						state->V[inst.secondNib] = i;
+						quit = 1;
+					}
+				}
+				if (quit)
+				{
+					state->waitKey = 0x00;
+				}
 			}
 			else
 			{
-				state->waitKey = 0x01;
+				state->waitKey = 0x01; // On main, dont advance PC
 			}
 			break;
 		case 0x15:
 			//Set DT = Vx, DT is set equal to the value of Vx
+			state->DT = 0x00;
 			state->DT = state->V[inst.secondNib];
 			break;
 		case 0x18:
 			// Set sound timer = Vx, ST is set equal to the value of Vx
+			state->ST = 0x00;
 			state->ST = state->V[inst.secondNib];
 			break;
 		case 0x1E:
@@ -547,7 +641,7 @@ void Execute(State * state, Instruction inst, SDL_Renderer * eRenderer)
 		case 0x00:
 			if(inst.secondByte == 0xE0)
 			{
-				ClearScreen(state,inst);
+				ClearScreen(state,inst,eRenderer);
 			}
 			else if(inst.firstByte == 0x00 && inst.secondByte == 0x00) 
 			{

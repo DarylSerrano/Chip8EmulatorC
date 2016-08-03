@@ -8,10 +8,11 @@ int main(int argc, char ** argv)
 	//		Fetch instruction
 	//		Decode instruction
 	//		Execute instruction
+	//		Advance PC
 	//		Draw display
 	//		Refresh timers
 	//		Process Inputs
-	//		Advance PC
+	//		Update flags
 	//	Exit emulator
 	
 	if(argc < 2)
@@ -23,6 +24,8 @@ int main(int argc, char ** argv)
 	//Display Variables
 	SDL_Window * eWindow;
 	SDL_Renderer * eRenderer;
+	SDL_Event e;
+	int quit = 0;
 	
 	// Init emulator state
 	State * chip8State = InitChip8();
@@ -31,22 +34,32 @@ int main(int argc, char ** argv)
 	//Initialize display
 	InitDisplay(&eWindow, &eRenderer);
 	
-	//LoadRoom(chip8State,argv[1]);
+	LoadRoom(chip8State,argv[1]);
 	
-	/*
-	for(;;)
+	while(!quit)
 	{
 		Decode(chip8State->memory,chip8State->PC,inst);
-		Execute(chip8State,*inst);
+		Execute(chip8State,*inst, eRenderer);
+		if(!(chip8State->waitKey))
+			Advance(chip8State);
 		//Draw
+		if (chip8State->drawFlag)
+		{
+			SDL_RenderPresent(eRenderer);
+			chip8State->drawFlag = 0x00;
+		}
 		RefreshTimer(chip8State);
 		//Process Inputs
-		if(chip8State->waitKey == 0)
-			Advance(chip8State);
+		while(SDL_PollEvent(&e) > 0)
+		{
+			if(e.type == SDL_QUIT)
+			{
+				quit = 1;
+			}
+		}
+		SDL_RenderPresent(eRenderer);
+		ProcessInput(chip8State);
 	}
-	
-	ExitEmu(chip8State, inst);
-	*/
 	
 	ExitEmu(chip8State, inst);
 	

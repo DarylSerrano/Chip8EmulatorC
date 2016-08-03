@@ -4,7 +4,7 @@
 #include <string.h>
 #include <time.h>
 #include <errno.h>
-#include <SDL2/SDL.h>
+#include <SDL2/SDL.h> //<SDL.h>
 //#include <SDL2/SDL_image.h>
 
 #ifndef EMULATOR_H_INCLUDED
@@ -34,6 +34,22 @@ typedef struct Chip8State{
 	uint8_t waitKey;
 	uint8_t drawFlag;
 } State;
+
+
+/* Input keypad layout:
+
+Original chip-8 layout
+1	2	3	C
+4	5	6	D
+7	8	9	E
+A	0	B	F
+
+New layout:
+4	5	6	7
+R	T	Y	U
+F	G	H	J
+V	B	N	M
+*/
 
 typedef struct Instruction{
 	uint8_t firstNib;
@@ -67,10 +83,13 @@ void InitDisplay(SDL_Window ** eWindow, SDL_Renderer ** eRenderer);
 //	Close the display
 void CloseDisplay(SDL_Window * eWindow, SDL_Renderer * eRenderer);
 
+// Process Input
+void ProcessInput(State * state);
+
 // Instrucion implementations
 void JumpCallReturn(State * state, Instruction inst); // SYS, JP, CALL, RET
 
-void ClearScreen(State * state, Instruction inst); // CLS
+void ClearScreen(State * state, Instruction inst, SDL_Renderer * eRenderer); // CLS
 
 void SkipIfEqualIn(State * state, Instruction inst); // SE Vx, nn [Skip if Vx == nn]
 
