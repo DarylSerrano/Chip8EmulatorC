@@ -3,3 +3,6 @@
 SDL*.c
 SDL*.out
 *.ch8
+display.c
+display.h
+*.png

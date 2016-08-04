@@ -5,10 +5,13 @@ State * InitChip8()
 {
 	State * chip8State = calloc(1, sizeof(State));
 	chip8State->memory = malloc(1024*4);
+	// Initialize memory
 	memset(chip8State->memory,0,1024*4);
+	// Initialize screen array
 	memset(chip8State->screen,0,sizeof(chip8State->screen[0][0])*64*32); //Or in sizeof use uint8_t
 	//chip8State->screen = &chip8State->memory[SCREEN_BASE]; 
-	chip8State->SP = 0xEA0;
+	memset(chip8State->Stack,0,sizeof(uint16_t)*16);
+	chip8State->SP = -1;
 	chip8State->PC = 0x200;
 	chip8State->I = 0x0;
 	chip8State->DT = 0x0;
@@ -25,7 +28,9 @@ State * InitChip8()
 	}
 	*/
 	
+	// Initialize registers
 	memset(chip8State->V,0,sizeof(uint8_t)*16);
+	// Initialize key states
 	memset(chip8State->keys,0,sizeof(uint8_t)*16);
 	
 	//Initialize fonts
@@ -78,7 +83,6 @@ State * InitChip8()
 		//F
 		0xF0, 0x80, 0xF0, 0x80, 0x80,
 	};
-	
 	memcpy(chip8State->memory,fonts,FONT_SIZE);
 	
 	srand(time(NULL)); //For RND instruction
@@ -144,8 +148,15 @@ void Decode(uint8_t * code, uint16_t pc, Instruction * inst)
 }
 
 // Exit emulator
-void ExitEmu(State * state, Instruction * inst)
+void ExitEmu(State * state, Instruction * inst, SDL_Window * eWindow, SDL_Renderer * eRenderer)
 {
+	//Close display
+	SDL_DestroyRenderer(eRenderer);
+	SDL_DestroyWindow(eWindow);
+	//IMG_Quit();
+	SDL_Quit();
+	
+	//Destroy structs
 	free(state);
 	free(inst);
 }
@@ -219,15 +230,6 @@ void InitDisplay(SDL_Window ** eWindow, SDL_Renderer ** eRenderer)
 	}
 	*/
 	
-}
-
-//	Close the display
-void CloseDisplay(SDL_Window * eWindow, SDL_Renderer * eRenderer)
-{
-	SDL_DestroyRenderer(eRenderer);
-	SDL_DestroyWindow(eWindow);
-	//IMG_Quit();
-	SDL_Quit();
 }
 
 // Process Input
@@ -316,9 +318,16 @@ void JumpCallReturn(State * state, Instruction inst) // SYS, JP, CALL, RET
 			// RET: sets PC to the adress on top of the stack and decrements the stack pointer
 			if(inst.firstByte == 0x00 && inst.secondByte == 0xEE) 
 			{
-				state->PC = (0x000F & state->memory[state->SP]) << 8; 
-				state->PC = state->PC | state->memory[state->SP+1];
-				state->SP -= 2; 
+				if(state->SP > -1)
+				{
+					state->PC = state->Stack[state->SP];
+					state->SP -= 1;
+				}
+				else
+				{
+					fprintf(stderr,"Error pop on stack, stack empty and SP = %d\n",state->SP);
+					exit(1);
+				} 
 			}
 			// SYS: jump to a machine code routine at nnn
 			else
@@ -331,11 +340,17 @@ void JumpCallReturn(State * state, Instruction inst) // SYS, JP, CALL, RET
 			state->PC = (0x0F00 & (inst.firstByte << 8)) | inst.secondByte;
 			break;
 		case 0x02:
-			// CALL: call subroutine at nnn, put PC on top of stack, then increments stack pointer
-			state->memory[state->SP] = (state->PC >> 8);
-			state->memory[state->SP+1] = state->PC & 0xFF;
-			state->PC = (0x0F00 & (inst.firstByte << 8)) | inst.secondByte;
-			state->SP += 2;
+			// CALL: call subroutine at nnn, increments stack pointer then put PC on top of stack
+			if(state->SP > -2 && state->SP < 16)
+			{
+				state->SP += 1;
+				state->Stack[state->SP] = state->PC;
+			}
+			else
+			{
+				fprintf(stderr, "Error on push, stack full, state->SP = %d\n",state->SP);
+				exit(1);
+			}
 			break;
 		case 0x0B:
 			// JP: jump to location nnn + V0
@@ -408,10 +423,13 @@ void Move(State * state, Instruction inst) // LD Vx, Vy
 	state->V[inst.secondNib] = state->V[inst.secondByte >> 4];
 }
 
-void Arithmetic(State * state, Instruction inst) // OR, AND, XOR, ADD, SUB, SHR, SHL, SUBN 
+void Arithmetic(State * state, Instruction inst) // LD [Vx], [Vy], OR, AND, XOR, ADD, SUB, SHR, SHL, SUBN 
 {
 	switch(inst.finalNib)
 	{
+		case 0x00:
+			Move(state, inst);
+			break;
 		case 0x01:
 			//Bitwise OR: Vx OR Vy
 			state->V[inst.secondNib] = state->V[inst.secondNib] | state->V[inst.secondByte >> 4]; 
@@ -424,7 +442,7 @@ void Arithmetic(State * state, Instruction inst) // OR, AND, XOR, ADD, SUB, SHR,
 			//Bitwise XOR: Vx XOR Vy
 			state->V[inst.secondNib] = state->V[inst.secondNib] ^ state->V[inst.secondByte >> 4]; 
 			break;
-		case 0x04:
+		case 0x04: //ADD
 			// Set Vx = Vx + Vy, if result is bigger than 8 bits (result > 255) VF is set to 1 (carry)
 			if(0xFF < state->V[inst.secondNib] + state->V[inst.secondByte >> 4])
 			{
@@ -432,7 +450,7 @@ void Arithmetic(State * state, Instruction inst) // OR, AND, XOR, ADD, SUB, SHR,
 			}
 			state->V[inst.secondNib] = state->V[inst.secondNib] + state->V[inst.secondByte >> 4];  
 			break;
-		case 0x05:
+		case 0x05: // SUB
 			// Set Vx = Vx - Vy if Vx > Vy then VF is set to 1 (not borrow), otherwise 0. Then Vy is subtracted from Vx and stored in Vx 
 			if(state->V[inst.secondNib] > state->V[inst.secondByte >> 4])
 			{
@@ -440,7 +458,7 @@ void Arithmetic(State * state, Instruction inst) // OR, AND, XOR, ADD, SUB, SHR,
 			}
 			state->V[inst.secondNib] = state->V[inst.secondNib] - state->V[inst.secondByte >> 4];  
 			break;
-		case 0x06:
+		case 0x06: // SHR
 			// Set Vx = Vx Right Shift 1 if the least-significant bit of Vx is 1, then VF is set to 1, otherwise 0
 			if(0x01 & state->V[inst.secondNib])
 			{
@@ -448,7 +466,7 @@ void Arithmetic(State * state, Instruction inst) // OR, AND, XOR, ADD, SUB, SHR,
 			}
 			state->V[inst.secondNib] = state->V[inst.secondNib] >> 1;
 			break;
-		case 0x07:
+		case 0x07: // SUBN
 			// Set Vx = Vy - Vx if Vy > Vx then VF is set to 1 (not borrow), otherwise 0. Then Vx is subtracted from Vy and stored in Vx
 			if(state->V[inst.secondByte >> 4] > state->V[inst.secondNib])
 			{
@@ -456,7 +474,7 @@ void Arithmetic(State * state, Instruction inst) // OR, AND, XOR, ADD, SUB, SHR,
 			}
 			state->V[inst.secondNib] = state->V[inst.secondByte >> 4] - state->V[inst.secondNib];  
 			break;
-		case 0x0E:
+		case 0x0E: // SHL
 			//Set Vx = Vx Left Shift 1 if most-significant bit of Vx is 1, then VF is set to 1, otherwise 0
 			if(0x08 & state->V[inst.secondNib])
 			{
@@ -480,7 +498,7 @@ void SetAddress(State * state, Instruction inst) // LD I, nnn [I = nnn]
 
 void Random(State * state, Instruction inst) // RND Vx, nn
 {
-	uint8_t n = rand() % 256;
+	uint8_t n = rand() % 256; // [0-255]
 	state->V[inst.secondNib] = n & inst.secondByte;
 }
 
@@ -492,6 +510,8 @@ void Draw(State * state, Instruction inst, SDL_Renderer * eRenderer) // DRW Vx, 
 	int y = (int) state->V[inst.secondByte >> 4];
 	int n = (int) inst.finalNib;
 	uint8_t byte;
+	
+	state->V[0x0F] = 0x00;
 
 	//Set draw flag
 	state->drawFlag = 0x00;
@@ -503,11 +523,11 @@ void Draw(State * state, Instruction inst, SDL_Renderer * eRenderer) // DRW Vx, 
 		j = 0;
 		for(;j < 8; ++j) // x pos
 		{
-			byte =  (state->memory[state->I+i] >> (8 - j+1)) & 0x01;
+			byte =  (state->memory[state->I+i] >> (8 - (j+1))) & 0x01;
 			if(byte != state->screen[y+i][x+j]) // Pixel change, set register VF, draw and update screen array
 			{	
 				state->drawFlag = 0x01; // Set to update the screen
-				state->V[0xF] = 0x01; // Set VF flag
+				state->V[15] = 1; // Set VF flag
 				state->screen[y+i][x+j] = byte; // Update screen array
 				// Set rectangle to render on screen
 				rectangle.x = (x+j) * 10;
@@ -563,7 +583,7 @@ void MiscInstruction(State * state, Instruction inst) // 0x0F instructions
 			{
 				uint8_t i = 0x00;
 				int quit = 0;
-				while (i < 0x0F && !quit) // 16 buttons
+				while (i < 0x10 && !quit) // 16 buttons
 				{
 					if (state->keys[i])
 					{
@@ -646,9 +666,14 @@ void Execute(State * state, Instruction inst, SDL_Renderer * eRenderer)
 			else if(inst.firstByte == 0x00 && inst.secondByte == 0x00) 
 			{
 				//NOOP Instruction
-			}else
+			}else if(inst.secondByte == 0xEE)
 			{
 				JumpCallReturn(state,inst);
+			}
+			else
+			{
+				fprintf(stderr,"Error, unreconized instruction %02x %02x\n",inst.firstByte, inst.secondByte);
+				exit(1);
 			}
 			break;
 		case 0x01:
@@ -701,7 +726,7 @@ void Execute(State * state, Instruction inst, SDL_Renderer * eRenderer)
 			}
 			else
 			{
-				fprintf(stderr,"Error, instruction not avalible: %01x %02x\n",inst.firstNib, inst.secondByte);
+				fprintf(stderr,"Error, instruction not avalible: %02x %02x\n",inst.firstByte, inst.secondByte);
 				exit(1);
 			}
 			break;
@@ -712,5 +737,8 @@ void Execute(State * state, Instruction inst, SDL_Renderer * eRenderer)
 			fprintf(stderr,"Error, instruction not avalible: %01x\n",inst.firstNib);
 			exit(1);
 	}
+	
+	if(state->ST > 0)
+		printf("BEEP!\n");
 }
 

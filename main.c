@@ -34,10 +34,11 @@ int main(int argc, char ** argv)
 	//Initialize display
 	InitDisplay(&eWindow, &eRenderer);
 	
+	//Load Rom
 	LoadRoom(chip8State,argv[1]);
 	
 	while(!quit)
-	{
+	{	
 		Decode(chip8State->memory,chip8State->PC,inst);
 		Execute(chip8State,*inst, eRenderer);
 		if(!(chip8State->waitKey))
@@ -47,6 +48,7 @@ int main(int argc, char ** argv)
 		{
 			SDL_RenderPresent(eRenderer);
 			chip8State->drawFlag = 0x00;
+			SDL_Delay(100);
 		}
 		RefreshTimer(chip8State);
 		//Process Inputs
@@ -57,13 +59,11 @@ int main(int argc, char ** argv)
 				quit = 1;
 			}
 		}
-		SDL_RenderPresent(eRenderer);
 		ProcessInput(chip8State);
+		
 	}
 	
-	ExitEmu(chip8State, inst);
-	
-	CloseDisplay(eWindow, eRenderer);
+	ExitEmu(chip8State, inst, eWindow, eRenderer);
 	
 	return 0;
 }
