@@ -1,4 +1,5 @@
 #include <stdint.h>
+#include <string.h>
 #include <SDL2/SDL.h> 
 
 #ifndef CPU_H_INCLUDED
@@ -26,6 +27,7 @@ typedef struct Chip8State{
 	uint8_t	screen[32][64]; //[y][x]
 	//uint8_t * screen;
 	uint8_t keys[16];
+	uint8_t AdvancePC;
 	uint8_t waitKey;
 	uint8_t drawFlag;
 } State;

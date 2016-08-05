@@ -1,10 +1,12 @@
 #include <stdlib.h>
 #include <stdio.h>
 //#include <stdint.h>
-#include <string.h>
 #include <time.h>
 #include <errno.h>
+
 #include "cpu.h"
+#include "debug.h"
+
 //#include <SDL2/SDL.h> //<SDL.h>
 //#include <SDL2/SDL_image.h>
 

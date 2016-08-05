@@ -16,7 +16,8 @@ State * InitChip8()
 	chip8State->I = 0x0;
 	chip8State->DT = 0x0;
 	chip8State->ST = 0x0;
-	chip8State->waitKey = 0x0;
+	chip8State->AdvancePC = 0x01;
+	chip8State->waitKey = 0x00;
 	chip8State->drawFlag = 0x0;
 	
 	/*
@@ -215,9 +216,6 @@ void InitDisplay(SDL_Window ** eWindow, SDL_Renderer ** eRenderer)
 
 	// Clear Renderer
 	SDL_RenderClear(*eRenderer);
-	
-	//Update Screen
-	SDL_RenderPresent(*eRenderer);
 
 	/*
 	//Initialize SDL_image library
@@ -333,30 +331,35 @@ void JumpCallReturn(State * state, Instruction inst) // SYS, JP, CALL, RET
 			else
 			{
 				state->PC = (inst.firstByte << 8) | inst.secondByte;
+				state->AdvancePC = 0;
 			}
 			break;
 		case 0x01:
 			// JP: jump to location nnn
 			state->PC = (0x0F00 & (inst.firstByte << 8)) | inst.secondByte;
+			state->AdvancePC = 0;
 			break;
 		case 0x02:
 			// CALL: call subroutine at nnn, increments stack pointer then put PC on top of stack
 			if(state->SP > -2 && state->SP < 16)
 			{
 				state->SP += 1;
-				state->Stack[state->SP] = state->PC;
+				state->Stack[state->SP] = state->PC+2;
+				state->PC = ((inst.firstByte & 0x00F) << 8) | inst.secondByte;
 			}
 			else
 			{
 				fprintf(stderr, "Error on push, stack full, state->SP = %d\n",state->SP);
 				exit(1);
 			}
+			state->AdvancePC = 0;
 			break;
 		case 0x0B:
 			// JP: jump to location nnn + V0
 			dir = (0x0000 | inst.secondNib) << 8;
 			dir = dir | inst.secondByte;
 			state->PC = dir + state->V[0];
+			state->AdvancePC = 0;
 			break;
 		default:
 			fprintf(stderr,"Error, instruction not avalible\n");
@@ -512,9 +515,6 @@ void Draw(State * state, Instruction inst, SDL_Renderer * eRenderer) // DRW Vx, 
 	uint8_t byte;
 	
 	state->V[0x0F] = 0x00;
-
-	//Set draw flag
-	state->drawFlag = 0x00;
 	
 	int i = 0;
 	int j;
@@ -641,10 +641,11 @@ void MiscInstruction(State * state, Instruction inst) // 0x0F instructions
 			break;
 		case 0x65:
 			//Read registers V0 through Vx from memory starting at location I
-			i = 0x00;
-			while(i <= state->V[inst.secondNib])
+			i = 0;
+			while(i < state->V[inst.secondNib])
 			{
 				 state->V[i] = state->memory[state->I+i];
+				 ++i;
 			}
 			break;
 		default:
@@ -656,6 +657,9 @@ void MiscInstruction(State * state, Instruction inst) // 0x0F instructions
 // Executes the current instruction
 void Execute(State * state, Instruction inst, SDL_Renderer * eRenderer)
 {
+	state->AdvancePC = 0x01; // Reset advance pc state
+	state->drawFlag = 0x00; // Reset Draw Flag
+	
 	switch(inst.firstNib)
 	{
 		case 0x00:
@@ -672,7 +676,7 @@ void Execute(State * state, Instruction inst, SDL_Renderer * eRenderer)
 			}
 			else
 			{
-				fprintf(stderr,"Error, unreconized instruction %02x %02x\n",inst.firstByte, inst.secondByte);
+				fprintf(stderr,"Error, unreconized instruction %02x %02x, PC: %04x\n",inst.firstByte, inst.secondByte, state->PC);
 				exit(1);
 			}
 			break;
@@ -739,6 +743,9 @@ void Execute(State * state, Instruction inst, SDL_Renderer * eRenderer)
 	}
 	
 	if(state->ST > 0)
+	{
 		printf("BEEP!\n");
+		fflush(stdout);
+	}
 }
 
