@@ -55,14 +55,13 @@ int main(int argc, char ** argv)
 		PrintPC(chip8State);
 		PrintCurrentInst(chip8State);
 		Decode(chip8State->memory,chip8State->PC,inst);
-		Execute(chip8State,*inst, eRenderer);
+		Execute(chip8State,*inst);
 		if(!(chip8State->waitKey) && chip8State->AdvancePC)
 			Advance(chip8State);
 		//Draw
 		//if (chip8State->drawFlag)
 		//{
-			SDL_RenderPresent(eRenderer);
-			SDL_Delay(100);
+			UpdateDisplay(eRenderer, chip8State);
 		//}
 		RefreshTimer(chip8State);
 		//Process Inputs
@@ -74,6 +73,8 @@ int main(int argc, char ** argv)
 			}
 		}
 		ProcessInput(chip8State);
+		KeyStates(chip8State);
+		SDL_Delay(500);
 		//SDL_Delay(5000);
 		
 	}

@@ -8,7 +8,17 @@ State * InitChip8()
 	// Initialize memory
 	memset(chip8State->memory,0,1024*4);
 	// Initialize screen array
-	memset(chip8State->screen,0,sizeof(chip8State->screen[0][0])*64*32); //Or in sizeof use uint8_t
+	//memset(chip8State->screen,0,sizeof(uint8_t)*64*32); //Or in sizeof use uint8_t
+	int i = 0;
+	int j;
+	for(; i < 32; ++i)
+	{
+		for(; j < 64; ++j)
+		{
+			chip8State->screen[i][j]= 0;
+		}
+	}
+	
 	//chip8State->screen = &chip8State->memory[SCREEN_BASE]; 
 	memset(chip8State->Stack,0,sizeof(uint16_t)*16);
 	chip8State->SP = -1;
@@ -37,50 +47,35 @@ State * InitChip8()
 	//Initialize fonts
 	uint8_t fonts[] = {
 		//0
-		0xF0, 0x90, 0X90, 0X90, 0XF0,
-		
+		0xF0, 0x90, 0X90, 0X90, 0XF0,	
 		//1
 		0x20, 0x60, 0x20, 0x20, 0x70,
-		
 		//2
 		0xF0, 0x10, 0xF0, 0x80, 0xF0,
-		
 		//3
 		0xF0, 0x10, 0xF0, 0x10, 0xF0,
-		
 		//4
 		0x90, 0x90, 0xF0, 0x10, 0x10,
-		
 		//5
 		0xF0, 0x80, 0xF0, 0x10, 0xF0,
-		
 		//6
 		0xF0, 0x80, 0xF0, 0x90, 0xF0,
-		
 		//7
 		0xF0, 0x10, 0x20, 0x40, 0x40,
-		
 		//8
 		0xF0, 0x90, 0xF0, 0x90, 0xF0,
-		
 		//9
 		0xF0, 0x90, 0xF0, 0x10, 0xF0,
-		
 		//A
 		0xF0, 0x90, 0xF0, 0x90, 0x90,
-		
 		//B
 		0xE0, 0x90, 0xE0, 0x90, 0xE0,
-		
 		//C
 		0xF0, 0x80, 0x80, 0x80, 0xF0,
-		
 		//D
 		0xE0, 0x90, 0x90, 0x90, 0xE0,
-		
 		//E
 		0xF0, 0x80, 0xF0, 0x80, 0xF0,
-		
 		//F
 		0xF0, 0x80, 0xF0, 0x80, 0x80,
 	};
@@ -230,6 +225,38 @@ void InitDisplay(SDL_Window ** eWindow, SDL_Renderer ** eRenderer)
 	
 }
 
+// Refresh Display
+void UpdateDisplay(SDL_Renderer * eRenderer, State * state)
+{
+	SDL_Rect rectangle;
+	
+	int i = 0;
+	int j;
+	for(; i < 32; ++i)
+	{
+		j = 0;
+		for(; j < 64; ++j)
+		{
+			// Set rectangle to render on screen
+			rectangle.x = j*10;
+			rectangle.y = i*10;
+			rectangle.w = 10;
+			rectangle.h = 10;
+			// Draw the rectangle on screen
+			if(state->screen[i][j]) // 1 == White
+			{
+				SDL_SetRenderDrawColor(eRenderer, WHITE, WHITE, WHITE, OPAQUE);
+			}
+			else // 0 == Black
+			{
+				SDL_SetRenderDrawColor(eRenderer, BLACK, BLACK, BLACK, OPAQUE);
+			}
+			SDL_RenderFillRect(eRenderer, &rectangle);
+		}
+	}
+	SDL_RenderPresent(eRenderer);
+}
+
 // Process Input
 void ProcessInput(State * state)
 {
@@ -243,63 +270,63 @@ void ProcessInput(State * state)
 	{
 		state->keys[0x00] = 0x01;
 	}
-	else if (keyStates[SDL_SCANCODE_4])
+	if (keyStates[SDL_SCANCODE_4])
 	{
 		state->keys[0x01] = 0x01;
 	}
-	else if (keyStates[SDL_SCANCODE_5])
+	if (keyStates[SDL_SCANCODE_5])
 	{
 		state->keys[0x02] = 0x01;
 	}
-	else if (keyStates[SDL_SCANCODE_6])
+	if (keyStates[SDL_SCANCODE_6])
 	{
 		state->keys[0x03] = 0x01;
 	}
-	else if (keyStates[SDL_SCANCODE_R])
+	if (keyStates[SDL_SCANCODE_R])
 	{
 		state->keys[0x04] = 0x01;
 	}
-	else if (keyStates[SDL_SCANCODE_T])
+	if (keyStates[SDL_SCANCODE_T])
 	{
 		state->keys[0x05] = 0x01;
 	}
-	else if (keyStates[SDL_SCANCODE_Y])
+	if (keyStates[SDL_SCANCODE_Y])
 	{
 		state->keys[0x06] = 0x01;
 	}
-	else if (keyStates[SDL_SCANCODE_F])
+	if (keyStates[SDL_SCANCODE_F])
 	{
 		state->keys[0x07] = 0x01;
 	}
-	else if (keyStates[SDL_SCANCODE_G])
+	if (keyStates[SDL_SCANCODE_G])
 	{
 		state->keys[0x08] = 0x01;
 	}
-	else if (keyStates[SDL_SCANCODE_H])
+	if (keyStates[SDL_SCANCODE_H])
 	{
 		state->keys[0x09] = 0x01;
 	}
-	else if (keyStates[SDL_SCANCODE_V])
+	if (keyStates[SDL_SCANCODE_V])
 	{
 		state->keys[0x0A] = 0x01;
 	}
-	else if (keyStates[SDL_SCANCODE_N])
+	if (keyStates[SDL_SCANCODE_N])
 	{
 		state->keys[0x0B] = 0x01;
 	}
-	else if (keyStates[SDL_SCANCODE_7])
+	if (keyStates[SDL_SCANCODE_7])
 	{
 		state->keys[0x0C] = 0x01;
 	}
-	else if (keyStates[SDL_SCANCODE_U])
+	if (keyStates[SDL_SCANCODE_U])
 	{
 		state->keys[0x0D] = 0x01;
 	}
-	else if (keyStates[SDL_SCANCODE_J])
+	if (keyStates[SDL_SCANCODE_J])
 	{
 		state->keys[0x0E] = 0x01;
 	}
-	else if (keyStates[SDL_SCANCODE_M])
+	if (keyStates[SDL_SCANCODE_M])
 	{
 		state->keys[0x0F] = 0x01;
 	}
@@ -367,13 +394,13 @@ void JumpCallReturn(State * state, Instruction inst) // SYS, JP, CALL, RET
 	}
 }
 
-void ClearScreen(State * state, Instruction inst, SDL_Renderer * eRenderer) // CLS
+void ClearScreen(State * state, Instruction inst) // CLS
 {
 	//memset(state->screen,0,SCREEN_SIZE);
 	memset(state->screen,0,sizeof(state->screen[0][0])*64*32);
 	// Set all to black
-	SDL_SetRenderDrawColor(eRenderer, BLACK, BLACK, BLACK, OPAQUE);
-	SDL_RenderClear(eRenderer);
+	//SDL_SetRenderDrawColor(eRenderer, BLACK, BLACK, BLACK, OPAQUE);
+	//SDL_RenderClear(eRenderer);
 	// Set draw flag
 	state->drawFlag = 0x01;
 }
@@ -505,10 +532,9 @@ void Random(State * state, Instruction inst) // RND Vx, nn
 	state->V[inst.secondNib] = n & inst.secondByte;
 }
 
-void Draw(State * state, Instruction inst, SDL_Renderer * eRenderer) // DRW Vx, Vy, n(nibble) 
+void Draw(State * state, Instruction inst) // DRW Vx, Vy, n(nibble) 
 {	// Draws an sprite of 8 pixels wide and n pixels high (max 16 pixel high) and set VF to 0 or 1
 	// TO-DO
-	SDL_Rect rectangle;
 	int x = (int) state->V[inst.secondNib];
 	int y = (int) state->V[inst.secondByte >> 4];
 	int n = (int) inst.finalNib;
@@ -526,27 +552,13 @@ void Draw(State * state, Instruction inst, SDL_Renderer * eRenderer) // DRW Vx, 
 			byte =  (state->memory[state->I+i] >> (8 - (j+1))) & 0x01;
 			if(byte != state->screen[y+i][x+j]) // Pixel change, set register VF, draw and update screen array
 			{	
-				state->drawFlag = 0x01; // Set to update the screen
 				state->V[15] = 1; // Set VF flag
 				state->screen[y+i][x+j] = byte; // Update screen array
-				// Set rectangle to render on screen
-				rectangle.x = (x+j) * 10;
-				rectangle.y = (y+i) * 10;
-				rectangle.w	= 10;
-				rectangle.h = 10;
-				if(byte) // 1 == White
-				{
-					SDL_SetRenderDrawColor(eRenderer, WHITE, WHITE, WHITE, OPAQUE);
-				}
-				else // 0 == Black
-				{
-					SDL_SetRenderDrawColor(eRenderer, BLACK, BLACK, BLACK, OPAQUE);
-				}
-				SDL_RenderFillRect(eRenderer, &rectangle);
 			}
 		}
 	}
-	  
+	
+	state->drawFlag = 0x01;
 }
 
 void SkipIfKeyPress(State * state, Instruction inst) // SKP Vx
@@ -655,7 +667,7 @@ void MiscInstruction(State * state, Instruction inst) // 0x0F instructions
 }
 
 // Executes the current instruction
-void Execute(State * state, Instruction inst, SDL_Renderer * eRenderer)
+void Execute(State * state, Instruction inst)
 {
 	state->AdvancePC = 0x01; // Reset advance pc state
 	state->drawFlag = 0x00; // Reset Draw Flag
@@ -665,7 +677,7 @@ void Execute(State * state, Instruction inst, SDL_Renderer * eRenderer)
 		case 0x00:
 			if(inst.secondByte == 0xE0)
 			{
-				ClearScreen(state,inst,eRenderer);
+				ClearScreen(state,inst);
 			}
 			else if(inst.firstByte == 0x00 && inst.secondByte == 0x00) 
 			{
@@ -717,7 +729,7 @@ void Execute(State * state, Instruction inst, SDL_Renderer * eRenderer)
 			Random(state, inst);
 			break;
 		case 0x0D:
-			Draw(state, inst, eRenderer);
+			Draw(state, inst);
 			break;
 		case 0x0E:
 			if(inst.secondByte == 0x9E)

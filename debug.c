@@ -77,6 +77,22 @@ void PrintCurrentInst(State * state)
 	printf("Instruction: \t %04x\n",inst);
 }
 
+void PrintScreenArray(State * state)
+{
+	int i = 0;
+	int j;
+	for(; i < 32; ++i)
+	{
+		j = 0;
+		for(; j < 64; ++i)
+		{
+			printf("%02x",state->screen[i][j]);
+			fflush(stdout);
+		}
+		printf("\n");
+	}
+}
+
 FILE * OpenLog()
 {
 	FILE * file = fopen(LOG_NAME, "a");

@@ -34,13 +34,16 @@ void RefreshTimer(State * state);
 //	Initialize the display 
 void InitDisplay(SDL_Window ** eWindow, SDL_Renderer ** eRenderer);
 
+// Refresh display
+void UpdateDisplay(SDL_Renderer * eRenderer, State * state);
+
 // Process Input
 void ProcessInput(State * state);
 
 // Instrucion implementations
 void JumpCallReturn(State * state, Instruction inst); // SYS, JP, CALL, RET
 
-void ClearScreen(State * state, Instruction inst, SDL_Renderer * eRenderer); // CLS
+void ClearScreen(State * state, Instruction inst); // CLS
 
 void SkipIfEqualIn(State * state, Instruction inst); // SE Vx, nn [Skip if Vx == nn]
 
@@ -62,7 +65,7 @@ void SetAddress(State * state, Instruction inst); // LD I, nnn [I = nnn]
 
 void Random(State * state, Instruction inst); // RND Vx, nn
 
-void Draw(State * state, Instruction inst, SDL_Renderer * eRenderer); // DRW Vx, Vy, n(nibble)
+void Draw(State * state, Instruction inst); // DRW Vx, Vy, n(nibble)
 
 void SkipIfKeyPress(State * state, Instruction inst); // SKP Vx
 
@@ -71,6 +74,6 @@ void SkipIfKeNotPress(State * state, Instruction inst); // SKNP Vx
 void MiscInstruction(State * state, Instruction inst); // 0x0F instructions
 
 // Executes the current instruction
-void Execute(State * state, Instruction inst, SDL_Renderer * eRenderer);
+void Execute(State * state, Instruction inst);
 
 #endif // EMULATOR_H_INCLUDED

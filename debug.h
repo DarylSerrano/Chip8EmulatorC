@@ -27,6 +27,8 @@ void PrintPC(State * state);
 
 void PrintCurrentInst(State * state);
 
+void PrintScreenArray(State * state);
+
 FILE * OpenLog();
 
 void CloseLog(FILE * debugLog);
